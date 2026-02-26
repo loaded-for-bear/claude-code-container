@@ -158,6 +158,17 @@ docker compose restart claude-code
 docker compose up -d --build
 ```
 
+### コンテナ内で pip install がエラーになる場合
+
+Ubuntu 24.04 の PEP 668 制限により、システム Python への直接インストールは禁止されています。
+このコンテナは `/opt/venv` を使用しており、通常の `pip install` は自動的に venv 内に入ります。
+エラーが出る場合は、`which pip` で `/opt/venv/bin/pip` が使われているか確認してください。
+
+```bash
+which pip        # → /opt/venv/bin/pip であればOK
+which python     # → /opt/venv/bin/python であればOK
+```
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
