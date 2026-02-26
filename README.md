@@ -183,6 +183,13 @@ which python     # → /opt/venv/bin/python であればOK
 
 ## Changelog
 
+### 2026-02-26 (5)
+
+- **セキュリティ (C-1)**: `sudo` を Dockerfile から完全削除 — `apt-get` フック経由の root 昇格バイパスを根本排除
+  - パッケージ追加が必要な場合は Dockerfile を編集して再ビルド
+- **セキュリティ (H-5)**: `docker-compose.yml` にリソース制限を追加（DoS・暴走プロセス対策）
+  - CPU: 最大 4 コア / メモリ: 最大 6GB / プロセス数: 最大 512 / ファイル記述子: 最大 4096
+
 ### 2026-02-26 (4)
 
 - **セキュリティ (3-A 強化)**: `INSTALL_FLUTTER` のデフォルトを `true` → **`false`** に変更（Flutter/Chromium を明示的 opt-in に）

@@ -45,6 +45,20 @@ services:
     security_opt:
       - no-new-privileges:true
 
+    # H-5: リソース制限（DoS 対策 / ホスト保護）
+    deploy:
+      resources:
+        limits:
+          cpus: '4'       # 最大 4 コア（fork bomb・暴走プロセス対策）
+          memory: 6g      # 最大 6GB（重い Rust ビルドや ML も考慮）
+
+    pids_limit: 512       # プロセス数上限（fork bomb 対策）
+
+    ulimits:
+      nofile:
+        soft: 1024        # オープンできるファイル記述子数（上限 4096 まで自己拡張可）
+        hard: 4096
+
     networks:
       - claude-network
 

@@ -22,7 +22,6 @@ RUN apt-get update && apt-get install -y \
     git \
     vim \
     nano \
-    sudo \
     build-essential \
     gcc \
     g++ \
@@ -138,11 +137,10 @@ ARG USERNAME=developer
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-# 2-A: sudo を apt 操作のみに制限（Claude Code による権限昇格リスクを低減）
+# sudo は一切付与しない（apt-get フックによる root 昇格バイパスを根本排除）
+# パッケージの追加が必要な場合は Dockerfile を編集して再ビルドすること
 RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && echo "$USERNAME ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
 # ── セキュリティ 1-A + 1-B: ツールディレクトリの所有権を developer に移譲 ──
 # 1-B: cargo の world-writable（chmod -R a+w）を解除し developer に chown
