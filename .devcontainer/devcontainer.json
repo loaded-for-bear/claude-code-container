@@ -88,5 +88,5 @@
   },
 
   "shutdownAction": "stopCompose",
-  "remoteUser": "root"
+  "remoteUser": "developer"
 }

@@ -7,12 +7,12 @@ services:
     
     volumes:
       - ./workspace:/workspace
-      - vscode-server-extensions:/root/.vscode-server/extensions
-      - vscode-server-extensionsinsiders:/root/.vscode-server-insiders/extensions
-      - pip-cache:/root/.cache/pip
-      - npm-global:/root/.npm-global
-      - flutter-pub-cache:/root/.pub-cache
-      - claude-config:/root/.claude
+      - vscode-server-extensions:/home/developer/.vscode-server/extensions
+      - vscode-server-extensionsinsiders:/home/developer/.vscode-server-insiders/extensions
+      - pip-cache:/home/developer/.cache/pip
+      - npm-global:/home/developer/.npm-global
+      - flutter-pub-cache:/home/developer/.pub-cache
+      - claude-config:/home/developer/.claude
       - cargo-registry:/usr/local/cargo/registry
       - cargo-git:/usr/local/cargo/git
     
@@ -34,7 +34,7 @@ services:
       - LC_ALL=C.UTF-8
       - FLUTTER_ROOT=/opt/flutter
       - CHROME_EXECUTABLE=/usr/bin/chromium
-      - NPM_CONFIG_PREFIX=/root/.npm-global
+      - NPM_CONFIG_PREFIX=/home/developer/.npm-global
       - CARGO_HOME=/usr/local/cargo
       - RUSTUP_HOME=/usr/local/rustup
     

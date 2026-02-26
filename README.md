@@ -183,6 +183,13 @@ which python     # → /opt/venv/bin/python であればOK
 
 ## Changelog
 
+### 2026-02-26 (2)
+
+- **セキュリティ (1-A)**: 非rootユーザー `developer`（UID 1000）を導入 — `remoteUser: root` 廃止
+- **セキュリティ (1-B)**: Cargo の `chmod -R a+w` を `chown developer + chmod 755` に修正
+- ボリュームマウントパスを `/root/` → `/home/developer/` に統一
+- `NPM_CONFIG_PREFIX` を `/home/developer/.npm-global` に変更
+
 ### 2026-02-26
 
 - **セキュリティ**: `claude --network=none` オプションの説明を追加

@@ -1,10 +1,16 @@
 FROM ubuntu:24.04
 
 # 環境変数
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Asia/Tokyo
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Asia/Tokyo \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
+
+# ツールの固定パス（システム領域 / 全ユーザー共有）
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    FLUTTER_HOME=/opt/flutter \
+    CHROME_EXECUTABLE=/usr/bin/chromium
 
 # タイムゾーン設定
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -53,10 +59,9 @@ RUN apt-get update && apt-get install -y \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# pipを最新版にアップグレード
+# pipを最新版にアップグレード + Pythonパッケージのインストール
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Pythonパッケージを分割してインストール
 RUN pip install --no-cache-dir \
     anthropic \
     requests \
@@ -92,35 +97,13 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 # npmを最新版に更新
 RUN npm install -g npm@latest
 
-# npmグローバルディレクトリの設定
-ENV NPM_CONFIG_PREFIX=/root/.npm-global
-RUN mkdir -p $NPM_CONFIG_PREFIX
+# Rust環境のインストール（システム領域）
+ENV PATH="/usr/local/cargo/bin:$PATH"
 
-# グローバルnpmパッケージのインストール
-RUN npm install -g \
-    typescript \
-    ts-node \
-    nodemon \
-    yarn \
-    pnpm
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    --default-toolchain stable --profile default
 
-# Rust環境のインストール
-ENV RUSTUP_HOME=/usr/local/rustup
-ENV CARGO_HOME=/usr/local/cargo
-ENV PATH=/usr/local/cargo/bin:$PATH
-
-# Rustupをインストール
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile default && \
-    chmod -R a+w $RUSTUP_HOME $CARGO_HOME
-
-# Rustの追加ツール
-RUN cargo install cargo-edit cargo-watch
-
-# Flutter環境のインストール
-ENV FLUTTER_HOME=/opt/flutter
-ENV PUB_CACHE=/root/.pub-cache
-
-# Flutterのダウンロードとインストール（リトライ機能付き）
+# Flutter環境のインストール（リトライ機能付き）
 RUN for i in 1 2 3; do \
         git clone https://github.com/flutter/flutter.git -b stable --depth 1 $FLUTTER_HOME && break || sleep 15; \
     done && \
@@ -135,7 +118,6 @@ RUN for i in 1 2 3; do \
 RUN apt-get update && apt-get install -y \
     chromium \
     && rm -rf /var/lib/apt/lists/*
-ENV CHROME_EXECUTABLE=/usr/bin/chromium
 
 # GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -145,34 +127,66 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     apt-get update && apt-get install -y gh && \
     rm -rf /var/lib/apt/lists/*
 
+# ── セキュリティ: 非rootユーザー作成（1-A） ──────────────────────────────────
+ARG USERNAME=developer
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
+# ── セキュリティ: ツールディレクトリの所有権を developer に移譲（1-A + 1-B） ──
+# 1-B: cargo の world-writable（chmod -R a+w）を解除し developer に chown
+RUN chown -R $USERNAME:$USERNAME /opt/venv /opt/flutter \
+    && chown -R $USERNAME:$USERNAME $RUSTUP_HOME $CARGO_HOME \
+    && chmod -R 755 $RUSTUP_HOME $CARGO_HOME
+
+# ── ここから developer として実行 ─────────────────────────────────────────────
+USER $USERNAME
+
+# developer 専用の環境変数（home 配下）
+ENV NPM_CONFIG_PREFIX=/home/developer/.npm-global \
+    PUB_CACHE=/home/developer/.pub-cache
+
+# PATH設定
+ENV PATH="/home/developer/.npm-global/bin:/home/developer/.local/bin:$PATH"
+ENV PATH="$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$PATH"
+
+# Rustの追加ツール（developer として実行 → CARGO_HOME 書き込み権限あり）
+RUN cargo install cargo-edit cargo-watch
+
+# npmグローバルパッケージ（developer として実行 → NPM_CONFIG_PREFIX 配下）
+RUN mkdir -p $NPM_CONFIG_PREFIX && \
+    npm install -g \
+    typescript \
+    ts-node \
+    nodemon \
+    yarn \
+    pnpm
+
+# Claude Codeのインストール（developer として実行）
+RUN npm install -g @anthropic-ai/claude-code
+
+# 必要なディレクトリの作成
+RUN mkdir -p /home/developer/.cache/pip \
+    && mkdir -p $PUB_CACHE
+
 # Gitのデフォルト設定（name/email はプレースホルダー。各プロジェクトで git config --local で上書きすること）
 RUN git config --global init.defaultBranch main && \
     git config --global core.editor vim && \
     git config --global user.name "Developer" && \
     git config --global user.email "dev@example.com"
 
-# Claude Codeのインストール（npm 経由）
-RUN npm install -g @anthropic-ai/claude-code
-
-# 必要なディレクトリの作成
-RUN mkdir -p /root/.cache/pip && \
-    mkdir -p /root/.pub-cache
-
-# PATH設定
-ENV PATH="/opt/venv/bin:$PATH"
-ENV PATH="/root/.local/bin:$PATH"
-ENV PATH="$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$PATH"
-ENV PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
-ENV PATH="/usr/local/cargo/bin:$PATH"
-
 # .bashrc に設定を追加
 RUN echo '' >> ~/.bashrc && \
     echo '# PATH settings' >> ~/.bashrc && \
     echo 'export PATH="/opt/venv/bin:$PATH"' >> ~/.bashrc && \
-    echo 'export PATH="/root/.local/bin:$PATH"' >> ~/.bashrc && \
+    echo 'export PATH="/home/developer/.local/bin:$PATH"' >> ~/.bashrc && \
     echo 'export FLUTTER_HOME=/opt/flutter' >> ~/.bashrc && \
     echo 'export PATH="$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$PATH"' >> ~/.bashrc && \
-    echo 'export NPM_CONFIG_PREFIX=/root/.npm-global' >> ~/.bashrc && \
+    echo 'export NPM_CONFIG_PREFIX=/home/developer/.npm-global' >> ~/.bashrc && \
     echo 'export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"' >> ~/.bashrc && \
     echo 'export PATH="/usr/local/cargo/bin:$PATH"' >> ~/.bashrc && \
     echo '' >> ~/.bashrc && \
