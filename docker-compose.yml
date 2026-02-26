@@ -33,7 +33,7 @@ services:
       - LANG=C.UTF-8
       - LC_ALL=C.UTF-8
       - FLUTTER_ROOT=/opt/flutter
-      - CHROME_EXECUTABLE=/usr/bin/chromium-browser
+      - CHROME_EXECUTABLE=/usr/bin/chromium
       - NPM_CONFIG_PREFIX=/root/.npm-global
       - CARGO_HOME=/usr/local/cargo
       - RUSTUP_HOME=/usr/local/rustup
