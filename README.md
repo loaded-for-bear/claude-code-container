@@ -181,6 +181,23 @@ which pip        # → /opt/venv/bin/pip であればOK
 which python     # → /opt/venv/bin/python であればOK
 ```
 
+## Changelog
+
+### 2026-02-26
+
+- **セキュリティ**: `claude --network=none` オプションの説明を追加
+- **バグ修正**: `CHROME_EXECUTABLE` を `chromium-browser` → `chromium` に修正（Ubuntu 24.04 対応漏れ）
+- **Node.js**: 20 → **22 (Active LTS)** にアップグレード（Node.js 20 は 2026-04-30 EOL）
+- **Ubuntu**: 22.04 → **24.04 LTS** にアップグレード（Python 3.10 は 2026-10 EOL）
+- **Python**: 3.10 → **3.12** / PEP 668 対応として `/opt/venv` を導入
+- **Claude Code**: インストール方法を `curl install.sh` → `npm install -g @anthropic-ai/claude-code` に変更
+- **ツール追加**: `ruff` (Python linter) を追加
+- **Docker Compose**: コマンドを V1 (`docker-compose`) → V2 (`docker compose`) 形式に統一
+
+### 2026-02-24
+
+- 初回リリース: Docker Compose + VS Code Dev Containers による Claude Code 開発環境テンプレート
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
