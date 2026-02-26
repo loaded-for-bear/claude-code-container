@@ -14,13 +14,13 @@ Dockerfile や docker-compose.yml を変更した後の反映手順です。
 
 ```powershell
 cd claude-code-container
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 キャッシュが効かない場合:
 
 ```powershell
-docker-compose build --no-cache && docker-compose up -d
+docker compose build --no-cache && docker compose up -d
 ```
 
 ## 再ビルド後の確認
@@ -47,7 +47,7 @@ gh --version
 
 | 設定 | コマンド | 永続化したい場合 |
 |------|---------|-----------------|
-| GitHub 認証 | `gh auth login` | `gh-config:/root/.config/gh` をボリュームに追加 |
+| GitHub 認証 | `gh auth login` | `gh-config:/home/developer/.config/gh` をボリュームに追加 |
 | Git ローカル設定 | `git config user.name "..."` | `/workspace` 内のリポジトリは維持される |
 | pip で追加したパッケージ | `pip install ...` | `pip-cache` ボリュームでキャッシュ済み（再インストールは高速） |
 | npm で追加したグローバルパッケージ | `npm install -g ...` | `npm-global` ボリュームで永続化済み |
@@ -58,11 +58,24 @@ gh --version
 services:
   claude-code:
     volumes:
-      - gh-config:/root/.config/gh       # GitHub CLI 認証の永続化
+      - gh-config:/home/developer/.config/gh   # GitHub CLI 認証の永続化
 
 volumes:
   gh-config:
 ```
+
+### 旧バージョン（root運用）からの移行
+
+非rootユーザー（developer）への移行後は、古い root 向けボリュームが残っている場合があります。
+クリーンに再ビルドするには **ボリュームも含めて削除**してください:
+
+```powershell
+docker compose down -v   # コンテナ + ボリューム削除
+docker compose up -d --build
+```
+
+> **注意**: `down -v` を実行すると `claude-config`（Claude Code 認証）など永続化データも消えます。
+> `gh auth login` / `claude login` の再実行が必要になります。
 
 ## 注意事項
 
