@@ -1,0 +1,19 @@
+# ネットワーク隔離モード（Phase 2-B）
+#
+# コンテナ自体のネットワークアクセスを完全に遮断する。
+# Claude Code の --network=none はエージェント内のみの制限だが、
+# このファイルはコンテナ OS レベルで全通信を遮断する。
+#
+# 使い方:
+#   docker compose -f docker-compose.yml -f docker-compose.isolated.yml up -d
+#
+# 注意:
+#   - git clone, npm install, pip install 等もすべて不可になる
+#   - /workspace 内の既存コードの実行・編集のみに使う
+#   - docker-compose.yml の networks: セクションが競合するため、
+#     エラーが出る場合は docker-compose.yml の networks: を一時的にコメントアウトする
+#
+services:
+  claude-code:
+    network_mode: "none"
+    # network_mode: none のとき ports: は無効（設定しても外部からアクセス不可）

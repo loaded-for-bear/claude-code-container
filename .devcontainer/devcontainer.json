@@ -60,7 +60,7 @@
     }
   },
 
-  "postCreateCommand": "echo '🚀 Environment ready!' && node --version && python --version && flutter --version && rustc --version",
+  "postCreateCommand": "node --version && python --version && rustc --version && (command -v flutter > /dev/null 2>&1 && flutter --version || echo 'Flutter: not installed (INSTALL_FLUTTER=false)') && echo 'Environment ready!'",
 
   "forwardPorts": [3000, 5000, 5173, 8080, 8888],
 

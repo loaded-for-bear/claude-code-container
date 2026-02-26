@@ -3,6 +3,9 @@ services:
     build:
       context: .devcontainer
       dockerfile: Dockerfile
+      args:
+        # 3-A: Flutter/Chromium が不要な場合は "false" に変更（攻撃面縮小・ビルド高速化）
+        INSTALL_FLUTTER: "true"
     container_name: claude-code-container
     
     volumes:
@@ -38,9 +41,13 @@ services:
       - CARGO_HOME=/usr/local/cargo
       - RUSTUP_HOME=/usr/local/rustup
     
+    # 3-B: setuid バイナリによる権限昇格を禁止（Docker デフォルト seccomp は維持）
+    security_opt:
+      - no-new-privileges:true
+
     networks:
       - claude-network
-    
+
     restart: unless-stopped
 
 volumes:

@@ -103,21 +103,27 @@ ENV PATH="/usr/local/cargo/bin:$PATH"
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     --default-toolchain stable --profile default
 
-# Flutter環境のインストール（リトライ機能付き）
-RUN for i in 1 2 3; do \
-        git clone https://github.com/flutter/flutter.git -b stable --depth 1 $FLUTTER_HOME && break || sleep 15; \
-    done && \
-    $FLUTTER_HOME/bin/flutter config --no-analytics && \
-    $FLUTTER_HOME/bin/flutter precache --web && \
-    $FLUTTER_HOME/bin/flutter config --enable-web && \
-    $FLUTTER_HOME/bin/flutter config --no-enable-android && \
-    $FLUTTER_HOME/bin/flutter config --no-enable-ios
+# ── セキュリティ 3-A: Flutter/Chromium をオプション化（攻撃面の縮小） ─────────
+# デフォルト: true（従来通り）。不要な場合は docker-compose.yml の build.args で false に変更。
+ARG INSTALL_FLUTTER=true
 
-# Chrome/Chromium
+# Flutter環境のインストール（リトライ機能付き）
+RUN if [ "$INSTALL_FLUTTER" = "true" ]; then \
+    for i in 1 2 3; do \
+        git clone https://github.com/flutter/flutter.git -b stable --depth 1 "$FLUTTER_HOME" && break || sleep 15; \
+    done && \
+    "$FLUTTER_HOME/bin/flutter" config --no-analytics && \
+    "$FLUTTER_HOME/bin/flutter" precache --web && \
+    "$FLUTTER_HOME/bin/flutter" config --enable-web && \
+    "$FLUTTER_HOME/bin/flutter" config --no-enable-android && \
+    "$FLUTTER_HOME/bin/flutter" config --no-enable-ios; \
+    fi
+
+# Chrome/Chromium（Flutter Web の実行に必要）
 # Ubuntu 24.04 ではパッケージ名が chromium-browser → chromium に変更
-RUN apt-get update && apt-get install -y \
-    chromium \
-    && rm -rf /var/lib/apt/lists/*
+RUN if [ "$INSTALL_FLUTTER" = "true" ]; then \
+    apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -127,21 +133,23 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     apt-get update && apt-get install -y gh && \
     rm -rf /var/lib/apt/lists/*
 
-# ── セキュリティ: 非rootユーザー作成（1-A） ──────────────────────────────────
+# ── セキュリティ 1-A: 非rootユーザー作成 ────────────────────────────────────
 ARG USERNAME=developer
 ARG USER_UID=1000
 ARG USER_GID=1000
 
+# 2-A: sudo を apt 操作のみに制限（Claude Code による権限昇格リスクを低減）
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
+    && echo "$USERNAME ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
-# ── セキュリティ: ツールディレクトリの所有権を developer に移譲（1-A + 1-B） ──
+# ── セキュリティ 1-A + 1-B: ツールディレクトリの所有権を developer に移譲 ──
 # 1-B: cargo の world-writable（chmod -R a+w）を解除し developer に chown
-RUN chown -R $USERNAME:$USERNAME /opt/venv /opt/flutter \
+RUN chown -R $USERNAME:$USERNAME /opt/venv \
     && chown -R $USERNAME:$USERNAME $RUSTUP_HOME $CARGO_HOME \
-    && chmod -R 755 $RUSTUP_HOME $CARGO_HOME
+    && chmod -R 755 $RUSTUP_HOME $CARGO_HOME \
+    && if [ -d "$FLUTTER_HOME" ]; then chown -R $USERNAME:$USERNAME "$FLUTTER_HOME"; fi
 
 # ── ここから developer として実行 ─────────────────────────────────────────────
 USER $USERNAME

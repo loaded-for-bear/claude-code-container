@@ -183,6 +183,13 @@ which python     # → /opt/venv/bin/python であればOK
 
 ## Changelog
 
+### 2026-02-26 (3)
+
+- **セキュリティ (2-A)**: `sudo` を `apt-get / apt` のみに制限（全権限昇格リスクを低減）
+- **セキュリティ (2-B)**: `docker-compose.isolated.yml` を追加（コンテナレベルのネットワーク完全遮断）
+- **セキュリティ (3-A)**: Flutter/Chromium をオプション化（`INSTALL_FLUTTER: "false"` でスキップ可能）
+- **セキュリティ (3-B)**: `no-new-privileges:true` を追加（setuid による権限昇格を禁止）
+
 ### 2026-02-26 (2)
 
 - **セキュリティ (1-A)**: 非rootユーザー `developer`（UID 1000）を導入 — `remoteUser: root` 廃止

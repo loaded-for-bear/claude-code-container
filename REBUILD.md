@@ -77,6 +77,38 @@ docker compose up -d --build
 > **注意**: `down -v` を実行すると `claude-config`（Claude Code 認証）など永続化データも消えます。
 > `gh auth login` / `claude login` の再実行が必要になります。
 
+### Flutter なしで軽量ビルドする（3-A）
+
+Flutter/Chromium が不要な場合は `docker-compose.yml` の `build.args` を変更してください:
+
+```yaml
+args:
+  INSTALL_FLUTTER: "false"   # ← true から false に変更
+```
+
+変更後にキャッシュなし再ビルド:
+
+```powershell
+docker compose build --no-cache && docker compose up -d
+```
+
+Flutter なしビルドのメリット:
+- ビルド時間: 約 20 分 → 約 5 分
+- イメージサイズ: 大幅削減
+- 攻撃面: Chromium/Flutter 関連 CVE の影響を受けない
+
+### ネットワーク隔離モードで起動する（2-B）
+
+コンテナ自体のネットワークを遮断して Claude Code を実行する場合:
+
+```powershell
+# docker-compose.yml の networks: セクションを一時的にコメントアウトしてから:
+docker compose -f docker-compose.yml -f docker-compose.isolated.yml up -d
+```
+
+> **注意**: このモードでは `git pull`, `npm install`, `pip install` 等も不可になります。
+> 既存コードのレビュー・実行専用として使用してください。
+
 ## 注意事項
 
 - `./workspace` はホスト側とマウントされているため、再ビルドで中身は消えません
