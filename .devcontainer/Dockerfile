@@ -49,34 +49,37 @@ RUN apt-get update && apt-get install -y \
     python-is-python3 \
     && rm -rf /var/lib/apt/lists/*
 
+# venvを作成（Ubuntu 24.04はPEP 668でシステムPythonへの直接インストールを制限しているためvenvを使用）
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 # pipを最新版にアップグレード
-# Ubuntu 24.04 は PEP 668 により --break-system-packages が必要
-RUN python3 -m pip install --no-cache-dir --break-system-packages --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Pythonパッケージを分割してインストール
-RUN python3 -m pip install --no-cache-dir --break-system-packages \
+RUN pip install --no-cache-dir \
     anthropic \
     requests \
     python-dotenv \
     pyyaml
 
-RUN python3 -m pip install --no-cache-dir --break-system-packages \
+RUN pip install --no-cache-dir \
     flask \
     fastapi \
     uvicorn
 
-RUN python3 -m pip install --no-cache-dir --break-system-packages \
+RUN pip install --no-cache-dir \
     pytest \
     pytest-cov
 
-RUN python3 -m pip install --no-cache-dir --break-system-packages \
+RUN pip install --no-cache-dir \
     black \
     flake8 \
     ruff \
     pylint \
     mypy
 
-RUN python3 -m pip install --no-cache-dir --break-system-packages \
+RUN pip install --no-cache-dir \
     numpy \
     pandas \
     matplotlib
@@ -148,7 +151,7 @@ RUN git config --global init.defaultBranch main && \
     git config --global user.name "Developer" && \
     git config --global user.email "dev@example.com"
 
-# Claude Codeのインストール（npm 経由。旧 install.sh は廃止予定のため移行）
+# Claude Codeのインストール（npm 経由）
 RUN npm install -g @anthropic-ai/claude-code
 
 # 必要なディレクトリの作成
@@ -156,6 +159,7 @@ RUN mkdir -p /root/.cache/pip && \
     mkdir -p /root/.pub-cache
 
 # PATH設定
+ENV PATH="/opt/venv/bin:$PATH"
 ENV PATH="/root/.local/bin:$PATH"
 ENV PATH="$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$PATH"
 ENV PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
@@ -164,6 +168,7 @@ ENV PATH="/usr/local/cargo/bin:$PATH"
 # .bashrc に設定を追加
 RUN echo '' >> ~/.bashrc && \
     echo '# PATH settings' >> ~/.bashrc && \
+    echo 'export PATH="/opt/venv/bin:$PATH"' >> ~/.bashrc && \
     echo 'export PATH="/root/.local/bin:$PATH"' >> ~/.bashrc && \
     echo 'export FLUTTER_HOME=/opt/flutter' >> ~/.bashrc && \
     echo 'export PATH="$FLUTTER_HOME/bin:$FLUTTER_HOME/bin/cache/dart-sdk/bin:$PATH"' >> ~/.bashrc && \
