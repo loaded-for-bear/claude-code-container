@@ -77,13 +77,14 @@ docker compose up -d --build
 > **注意**: `down -v` を実行すると `claude-config`（Claude Code 認証）など永続化データも消えます。
 > `gh auth login` / `claude login` の再実行が必要になります。
 
-### Flutter なしで軽量ビルドする（3-A）
+### Flutter ありでビルドする（3-A）
 
-Flutter/Chromium が不要な場合は `docker-compose.yml` の `build.args` を変更してください:
+デフォルトは `INSTALL_FLUTTER: "false"`（Flutter/Chromium なし）です。
+Flutter が必要な場合は `docker-compose.yml` の `build.args` を変更してください:
 
 ```yaml
 args:
-  INSTALL_FLUTTER: "false"   # ← true から false に変更
+  INSTALL_FLUTTER: "true"   # ← false から true に変更
 ```
 
 変更後にキャッシュなし再ビルド:
@@ -92,8 +93,8 @@ args:
 docker compose build --no-cache && docker compose up -d
 ```
 
-Flutter なしビルドのメリット:
-- ビルド時間: 約 20 分 → 約 5 分
+Flutter なし（デフォルト）のメリット:
+- ビルド時間: 約 5 分（Flutter あり: 約 20 分）
 - イメージサイズ: 大幅削減
 - 攻撃面: Chromium/Flutter 関連 CVE の影響を受けない
 

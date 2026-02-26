@@ -105,7 +105,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
 
 # ── セキュリティ 3-A: Flutter/Chromium をオプション化（攻撃面の縮小） ─────────
 # デフォルト: true（従来通り）。不要な場合は docker-compose.yml の build.args で false に変更。
-ARG INSTALL_FLUTTER=true
+ARG INSTALL_FLUTTER=false
 
 # Flutter環境のインストール（リトライ機能付き）
 RUN if [ "$INSTALL_FLUTTER" = "true" ]; then \

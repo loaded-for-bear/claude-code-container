@@ -4,8 +4,8 @@ services:
       context: .devcontainer
       dockerfile: Dockerfile
       args:
-        # 3-A: Flutter/Chromium が不要な場合は "false" に変更（攻撃面縮小・ビルド高速化）
-        INSTALL_FLUTTER: "true"
+        # 3-A: Flutter/Chromium が必要な場合は "true" に変更（デフォルト: false = 攻撃面縮小・ビルド高速化）
+        INSTALL_FLUTTER: "false"
     container_name: claude-code-container
     
     volumes:
