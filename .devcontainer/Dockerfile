@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # 環境変数
 ENV DEBIAN_FRONTEND=noninteractive
@@ -49,38 +49,34 @@ RUN apt-get update && apt-get install -y \
     python-is-python3 \
     && rm -rf /var/lib/apt/lists/*
 
-# システムのpython3-blinkerを削除（競合回避）
-RUN apt-get update && apt-get remove -y python3-blinker && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
-
 # pipを最新版にアップグレード
-RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# blinkerを先にインストール（競合回避）
-RUN python3 -m pip install --no-cache-dir --upgrade --ignore-installed blinker
+# Ubuntu 24.04 は PEP 668 により --break-system-packages が必要
+RUN python3 -m pip install --no-cache-dir --break-system-packages --upgrade pip setuptools wheel
 
 # Pythonパッケージを分割してインストール
-RUN python3 -m pip install --no-cache-dir \
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
     anthropic \
     requests \
     python-dotenv \
     pyyaml
 
-RUN python3 -m pip install --no-cache-dir \
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
     flask \
     fastapi \
     uvicorn
 
-RUN python3 -m pip install --no-cache-dir \
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
     pytest \
     pytest-cov
 
-RUN python3 -m pip install --no-cache-dir \
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
     black \
     flake8 \
+    ruff \
     pylint \
     mypy
 
-RUN python3 -m pip install --no-cache-dir \
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
     numpy \
     pandas \
     matplotlib
@@ -132,10 +128,11 @@ RUN for i in 1 2 3; do \
     $FLUTTER_HOME/bin/flutter config --no-enable-ios
 
 # Chrome/Chromium
+# Ubuntu 24.04 ではパッケージ名が chromium-browser → chromium に変更
 RUN apt-get update && apt-get install -y \
-    chromium-browser \
+    chromium \
     && rm -rf /var/lib/apt/lists/*
-ENV CHROME_EXECUTABLE=/usr/bin/chromium-browser
+ENV CHROME_EXECUTABLE=/usr/bin/chromium
 
 # GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -145,15 +142,14 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     apt-get update && apt-get install -y gh && \
     rm -rf /var/lib/apt/lists/*
 
-# Gitのデフォルト設定
+# Gitのデフォルト設定（name/email はプレースホルダー。各プロジェクトで git config --local で上書きすること）
 RUN git config --global init.defaultBranch main && \
     git config --global core.editor vim && \
     git config --global user.name "Developer" && \
     git config --global user.email "dev@example.com"
 
-# Claude Codeのインストール
-RUN mkdir -p /root/.local/bin && \
-    curl -fsSL https://claude.ai/install.sh | bash
+# Claude Codeのインストール（npm 経由。旧 install.sh は廃止予定のため移行）
+RUN npm install -g @anthropic-ai/claude-code
 
 # 必要なディレクトリの作成
 RUN mkdir -p /root/.cache/pip && \
