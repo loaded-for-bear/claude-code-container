@@ -24,12 +24,13 @@ services:
     tty: true
     stdin_open: true
 
+    # H-4: 127.0.0.1 にバインドし LAN 上の他デバイスからの直接アクセスを遮断
     ports:
-      - "3000:3000"
-      - "8080:8080"
-      - "5000:5000"
-      - "8888:8888"
-      - "5173:5173"
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:5000:5000"
+      - "127.0.0.1:8888:8888"
+      - "127.0.0.1:5173:5173"
 
     environment:
       - TZ=Asia/Tokyo
@@ -51,6 +52,12 @@ services:
     # 3-B: setuid バイナリによる権限昇格を禁止（Docker デフォルト seccomp は維持）
     security_opt:
       - no-new-privileges:true
+
+    # L-1: Linux Capabilities を最小化（不要な特権を根本排除）
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE   # vscode-lldb デバッガー（プロセスアタッチ）に必要
 
     # H-5: リソース制限（DoS 対策 / ホスト保護）
     deploy:

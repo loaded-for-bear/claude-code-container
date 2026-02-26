@@ -26,9 +26,6 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     make \
-    net-tools \
-    iputils-ping \
-    dnsutils \
     ca-certificates \
     gnupg \
     lsb-release \
@@ -41,9 +38,10 @@ RUN apt-get update && apt-get install -y \
     cmake \
     ninja-build \
     pkg-config \
-    libgtk-3-dev \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
+# L-3: net-tools / iputils-ping / dnsutils は攻撃偵察に悪用されるため除外
+# M-2: libgtk-3-dev は Flutter 専用 → INSTALL_FLUTTER=true 時のみインストール
 
 # Python環境のインストール
 RUN apt-get update && apt-get install -y \
@@ -118,10 +116,11 @@ RUN if [ "$INSTALL_FLUTTER" = "true" ]; then \
     "$FLUTTER_HOME/bin/flutter" config --no-enable-ios; \
     fi
 
-# Chrome/Chromium（Flutter Web の実行に必要）
+# Chrome/Chromium + libgtk-3-dev（Flutter Web の実行に必要）
 # Ubuntu 24.04 ではパッケージ名が chromium-browser → chromium に変更
+# M-2: libgtk-3-dev は Flutter 依存のため INSTALL_FLUTTER=true 時のみインストール
 RUN if [ "$INSTALL_FLUTTER" = "true" ]; then \
-    apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*; \
+    apt-get update && apt-get install -y chromium libgtk-3-dev && rm -rf /var/lib/apt/lists/*; \
     fi
 
 # GitHub CLI
@@ -177,13 +176,23 @@ RUN npm install -g @anthropic-ai/claude-code
 
 # 必要なディレクトリの作成
 RUN mkdir -p /home/developer/.cache/pip \
-    && mkdir -p $PUB_CACHE
+    && mkdir -p $PUB_CACHE \
+    && mkdir -p /home/developer/.githooks-empty
+# H-2: 空の hooks ディレクトリを作成 → git config で参照してすべての git hooks を無効化
+
+# H-1: npm install スクリプト（postinstall 等）をデフォルト無効化
+# （ビルド時の npm install はすでに完了しているため影響なし）
+RUN echo "ignore-scripts=true" >> ~/.npmrc
 
 # Gitのデフォルト設定（name/email はプレースホルダー。各プロジェクトで git config --local で上書きすること）
 RUN git config --global init.defaultBranch main && \
     git config --global core.editor vim && \
     git config --global user.name "Developer" && \
-    git config --global user.email "dev@example.com"
+    git config --global user.email "dev@example.com" && \
+    git config --global core.hooksPath /home/developer/.githooks-empty
+# H-2: core.hooksPath を空ディレクトリに向けることで全 git hooks を無効化
+# （post-checkout / post-merge 等による任意コード実行を防止）
+# プロジェクト個別に有効化する場合: git config --local core.hooksPath .githooks
 
 # .bashrc に設定を追加
 RUN echo '' >> ~/.bashrc && \
