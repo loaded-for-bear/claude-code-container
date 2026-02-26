@@ -1,0 +1,95 @@
+{
+  "name": "Claude Code Development Environment",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "claude-code",
+  "workspaceFolder": "/workspace",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens",
+        "ms-vscode.cpptools",
+        "streetsidesoftware.code-spell-checker",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-toolsai.jupyter",
+        "dart-code.dart-code",
+        "dart-code.flutter",
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb"
+      ],
+      
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.tabSize": 2,
+        "files.autoSave": "afterDelay",
+        "files.autoSaveDelay": 1000,
+        
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "none",
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+          }
+        },
+        
+        "dart.flutterSdkPath": "/opt/flutter",
+        "dart.debugExternalPackageLibraries": true,
+        "dart.debugSdkLibraries": false,
+        "[dart]": {
+          "editor.formatOnSave": true,
+          "editor.formatOnType": true,
+          "editor.rulers": [80]
+        },
+        
+        "rust-analyzer.cargo.loadOutDirsFromCheck": true,
+        "rust-analyzer.procMacro.enable": true,
+        "[rust]": {
+          "editor.defaultFormatter": "rust-lang.rust-analyzer",
+          "editor.formatOnSave": true
+        }
+      }
+    }
+  },
+  
+  "postCreateCommand": "echo '🚀 Environment ready!' && node --version && python --version && flutter --version && rustc --version",
+  
+  "forwardPorts": [3000, 5000, 5173, 8080, 8888],
+  
+  "portsAttributes": {
+    "3000": {
+      "label": "Node App",
+      "onAutoForward": "notify"
+    },
+    "5000": {
+      "label": "Flask/Python",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Flutter Web",
+      "onAutoForward": "openBrowser"
+    },
+    "8080": {
+      "label": "Web Server",
+      "onAutoForward": "notify"
+    },
+    "8888": {
+      "label": "Jupyter",
+      "onAutoForward": "notify"
+    }
+  },
+  
+  "shutdownAction": "stopCompose",
+  "remoteUser": "root"
+}

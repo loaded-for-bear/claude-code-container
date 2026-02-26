@@ -1,0 +1,163 @@
+# Claude Code Development Environment
+
+Docker Compose と VS Code Dev Containers を使用した Claude Code 開発環境
+
+## 環境構成
+
+| カテゴリ | ツール |
+|---------|--------|
+| OS | Ubuntu 22.04 |
+| Node.js | 20.x (LTS) / npm, yarn, pnpm |
+| Python | 3.10 / pip, venv |
+| Rust | stable / cargo |
+| Flutter | stable (Web) |
+| AI | Claude Code (Dockerfile内でインストール済み) |
+
+## 前提条件
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) がインストール済み
+- [VS Code](https://code.visualstudio.com/) がインストール済み
+- VS Code 拡張機能 [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) がインストール済み
+
+## セットアップ手順
+
+### 手順1: プロジェクトを開く
+
+1. VS Code でこのフォルダ (`claude-code-container`) を開く
+2. 左下に緑色の `><` アイコンが表示されていることを確認
+
+### 手順2: コンテナをビルド・起動
+
+**方法A: コマンドパレット（推奨）**
+
+1. `F1` キーまたは `Ctrl+Shift+P`
+2. `Dev Containers: Reopen in Container` と入力して選択
+3. 初回はDockerイメージのビルドに **5〜10分** かかります
+4. 左下が `Dev Container: Claude Code Development Environment` に変わったら完了
+
+**方法B: 左下のアイコン**
+
+1. VS Code 左下の緑色の `><` アイコンをクリック
+2. `Reopen in Container` を選択
+
+### 手順3: Claude Code の認証
+
+コンテナ内のターミナル (`Ctrl+`` `) で実行:
+
+```bash
+# バージョン確認（Dockerfile内でインストール済み）
+claude --version
+
+# ログイン（ブラウザ認証）
+claude login
+
+# または環境変数でAPI Keyを設定
+export ANTHROPIC_API_KEY="your-api-key-here"
+```
+
+> **Warning**
+> APIキーや認証情報を `.env` ファイルや環境変数で管理し、**絶対にGitにコミットしないでください。**
+> `.gitignore` で `.env` は除外済みですが、コミット前に `git diff --staged` で機密情報が含まれていないか確認することを推奨します。
+
+### 手順4: Git ユーザー設定（プロジェクトごと）
+
+デフォルトでは `Developer / dev@example.com` が設定されています。
+プロジェクトごとに変更する場合:
+
+```bash
+cd /workspace/your-project
+git config user.name "Your Name"
+git config user.email "your-email@example.com"
+```
+
+### 手順5: GitHub 接続（push する場合）
+
+Public リポジトリの clone は認証不要ですが、push には認証が必要です。
+GitHub CLI はインストール済みです。
+
+```bash
+# ブラウザ認証
+gh auth login
+```
+
+## 日常の使い方
+
+### コンテナへの接続
+
+VS Code でプロジェクトフォルダを開き、左下の `><` → `Reopen in Container` を選択。
+既にコンテナが起動済みであれば数秒で接続されます。
+
+### ポート一覧
+
+| ポート | 用途 |
+|--------|------|
+| 3000 | Node.js アプリ |
+| 5000 | Flask / Python |
+| 5173 | Flutter Web / Vite |
+| 8080 | Web サーバー |
+| 8888 | Jupyter |
+
+### ファイル構成
+
+```
+claude-code-container/
+├── .devcontainer/
+│   ├── Dockerfile          # コンテナイメージ定義
+│   └── devcontainer.json   # VS Code Dev Container 設定
+├── .gitignore              # 機密ファイル除外ルール
+├── docker-compose.yml      # Docker Compose 設定
+├── workspace/              # マウントされる作業ディレクトリ
+├── LICENSE                 # MIT License
+└── README.md
+```
+
+## Docker 管理コマンド
+
+ホスト側（PowerShell / ターミナル）で実行:
+
+```powershell
+# コンテナの起動
+docker-compose up -d
+
+# コンテナの停止
+docker-compose down
+
+# コンテナの再構築（Dockerfile変更後）
+docker-compose up -d --build
+
+# キャッシュなしで再構築
+docker-compose build --no-cache && docker-compose up -d
+
+# ログの確認
+docker-compose logs -f claude-code
+
+# コンテナ内でコマンド実行
+docker-compose exec claude-code bash
+```
+
+## トラブルシューティング
+
+### ビルドに失敗する場合
+
+```powershell
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### ファイルの変更が反映されない場合
+
+```powershell
+docker-compose restart claude-code
+```
+
+### コンテナ内のツールが古い場合
+
+コンテナを再ビルドしてください。pip / cargo / npm のキャッシュはボリュームに保存されているため、再ビルドでも高速です。
+
+```powershell
+docker-compose up -d --build
+```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
