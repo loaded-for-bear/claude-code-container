@@ -85,7 +85,7 @@ RUN pip install --no-cache-dir \
     matplotlib
 
 # Node.js (LTS版) のインストール
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 

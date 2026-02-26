@@ -7,7 +7,7 @@ Docker Compose と VS Code Dev Containers を使用した Claude Code 開発環�
 | カテゴリ | ツール |
 |---------|--------|
 | OS | Ubuntu 24.04 |
-| Node.js | 20.x (LTS) / npm, yarn, pnpm |
+| Node.js | 22.x (LTS) / npm, yarn, pnpm |
 | Python | 3.12 / pip, venv |
 | Rust | stable / cargo |
 | Flutter | stable (Web) |
