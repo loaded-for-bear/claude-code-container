@@ -1,0 +1,4 @@
+# スクレイピング対象や追加したいドメインをここに記述
+.note.com
+.wikipedia.org
+.google.com

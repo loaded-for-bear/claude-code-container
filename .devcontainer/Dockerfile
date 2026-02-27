@@ -101,7 +101,6 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     --default-toolchain stable --profile default
 
 # ── セキュリティ 3-A: Flutter/Chromium をオプション化（攻撃面の縮小） ─────────
-# デフォルト: true（従来通り）。不要な場合は docker-compose.yml の build.args で false に変更。
 ARG INSTALL_FLUTTER=false
 
 # Flutter環境のインストール（リトライ機能付き）
@@ -117,8 +116,6 @@ RUN if [ "$INSTALL_FLUTTER" = "true" ]; then \
     fi
 
 # Chrome/Chromium + libgtk-3-dev（Flutter Web の実行に必要）
-# Ubuntu 24.04 ではパッケージ名が chromium-browser → chromium に変更
-# M-2: libgtk-3-dev は Flutter 依存のため INSTALL_FLUTTER=true 時のみインストール
 RUN if [ "$INSTALL_FLUTTER" = "true" ]; then \
     apt-get update && apt-get install -y chromium libgtk-3-dev && rm -rf /var/lib/apt/lists/*; \
     fi
@@ -131,22 +128,31 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     apt-get update && apt-get install -y gh && \
     rm -rf /var/lib/apt/lists/*
 
+
 # ── セキュリティ 1-A: 非rootユーザー作成 ────────────────────────────────────
 ARG USERNAME=developer
 ARG USER_UID=1000
 ARG USER_GID=1000
 
+# Ubuntu 24.04 には GID/UID 1000 の ubuntu グループ・ユーザーがデフォルトで存在する
+# → 既存グループ・ユーザーをリネームして再利用する（groupadd/useradd は使わない）
 # sudo は一切付与しない（apt-get フックによる root 昇格バイパスを根本排除）
-# パッケージの追加が必要な場合は Dockerfile を編集して再ビルドすること
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+RUN groupmod --new-name $USERNAME $(getent group $USER_GID | cut -d: -f1) && \
+    usermod --login $USERNAME --home /home/$USERNAME --move-home \
+        $(getent passwd $USER_UID | cut -d: -f1) && \
+    usermod --gid $USER_GID $USERNAME
 
 # ── セキュリティ 1-A + 1-B: ツールディレクトリの所有権を developer に移譲 ──
 # 1-B: cargo の world-writable（chmod -R a+w）を解除し developer に chown
+# VSCode Server 用ディレクトリを root 権限のうちに作成・chown
+# （Named Volume マウント前に作成しておくことで Permission denied を防ぐ）
 RUN chown -R $USERNAME:$USERNAME /opt/venv \
     && chown -R $USERNAME:$USERNAME $RUSTUP_HOME $CARGO_HOME \
     && chmod -R 755 $RUSTUP_HOME $CARGO_HOME \
-    && if [ -d "$FLUTTER_HOME" ]; then chown -R $USERNAME:$USERNAME "$FLUTTER_HOME"; fi
+    && if [ -d "$FLUTTER_HOME" ]; then chown -R $USERNAME:$USERNAME "$FLUTTER_HOME"; fi \
+    && mkdir -p /home/$USERNAME/.vscode-server/bin \
+    && mkdir -p /home/$USERNAME/.vscode-server/extensions \
+    && chown -R $USERNAME:$USERNAME /home/$USERNAME/.vscode-server
 
 # ── ここから developer として実行 ─────────────────────────────────────────────
 USER $USERNAME
@@ -177,22 +183,20 @@ RUN npm install -g @anthropic-ai/claude-code
 # 必要なディレクトリの作成
 RUN mkdir -p /home/developer/.cache/pip \
     && mkdir -p $PUB_CACHE \
-    && mkdir -p /home/developer/.githooks-empty
+    && mkdir -p /home/developer/.githooks-empty \
+    && mkdir -p /home/developer/.claude/debug
 # H-2: 空の hooks ディレクトリを作成 → git config で参照してすべての git hooks を無効化
 
 # H-1: npm install スクリプト（postinstall 等）をデフォルト無効化
-# （ビルド時の npm install はすでに完了しているため影響なし）
 RUN echo "ignore-scripts=true" >> ~/.npmrc
 
-# Gitのデフォルト設定（name/email はプレースホルダー。各プロジェクトで git config --local で上書きすること）
+# Gitのデフォルト設定
 RUN git config --global init.defaultBranch main && \
     git config --global core.editor vim && \
     git config --global user.name "Developer" && \
     git config --global user.email "dev@example.com" && \
     git config --global core.hooksPath /home/developer/.githooks-empty
 # H-2: core.hooksPath を空ディレクトリに向けることで全 git hooks を無効化
-# （post-checkout / post-merge 等による任意コード実行を防止）
-# プロジェクト個別に有効化する場合: git config --local core.hooksPath .githooks
 
 # .bashrc に設定を追加
 RUN echo '' >> ~/.bashrc && \
@@ -214,3 +218,4 @@ WORKDIR /workspace
 
 # デフォルトシェル
 CMD ["/bin/bash"]
+
