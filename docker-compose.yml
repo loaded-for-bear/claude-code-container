@@ -33,7 +33,7 @@ services:
       - LANG=C.UTF-8
       - LC_ALL=C.UTF-8
       - FLUTTER_ROOT=/opt/flutter
-      - CHROME_EXECUTABLE=/usr/bin/chromium
+      # CHROME_EXECUTABLE は Dockerfile の ENV で設定済み（INSTALL_FLUTTER=false 時は Chromium 未インストール）
       - NPM_CONFIG_PREFIX=/home/developer/.npm-global
       - CARGO_HOME=/usr/local/cargo
       - RUSTUP_HOME=/usr/local/rustup
@@ -42,16 +42,15 @@ services:
       - HTTPS_PROXY=http://egress-proxy:3128
       - http_proxy=http://egress-proxy:3128
       - https_proxy=http://egress-proxy:3128
-      - NO_PROXY=localhost,127.0.0.1
-      - no_proxy=localhost,127.0.0.1
+      - NO_PROXY=localhost,127.0.0.1,127.0.0.11,172.16.0.0/12
+      - no_proxy=localhost,127.0.0.1,127.0.0.11,172.16.0.0/12
     # 3-B: setuid バイナリによる権限昇格を禁止（Docker デフォルト seccomp は維持）
     security_opt:
       - no-new-privileges:true
     # L-1: Linux Capabilities を最小化（不要な特権を根本排除）
     cap_drop:
       - ALL
-    cap_add:
-      - SYS_PTRACE   # vscode-lldb デバッガー（プロセスアタッチ）に必要
+    # SYS_PTRACE はデバッグ時のみ必要。docker-compose.debug.yml で追加して起動すること。
     # H-5: リソース制限（DoS 対策 / ホスト保護）
     deploy:
       resources:
@@ -73,12 +72,17 @@ services:
   # C-3: Egress フィルタリングプロキシ（Squid）
   # allowlist 以外のドメインへのアウトバウンドをブロック
   egress-proxy:
-    image: ubuntu/squid:latest
+    image: ubuntu/squid:6.6-24.04_beta
     container_name: claude-code-egress-proxy
     user: proxy
     volumes:
       - ./egress-proxy/squid.conf:/etc/squid/squid.conf:ro
       - ./egress-proxy/allowlist.txt:/etc/squid/allowlist.txt:ro
+    healthcheck:
+      test: ["CMD", "squidclient", "-h", "localhost", "mgr:info"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       - internal
       - claude-network

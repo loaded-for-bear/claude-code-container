@@ -32,7 +32,7 @@
         "files.autoSave": "afterDelay",
         "files.autoSaveDelay": 1000,
 
-        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "python.defaultInterpreterPath": "/opt/venv/bin/python",
         "[python]": {
           "editor.defaultFormatter": "ms-python.black-formatter",
           "editor.formatOnSave": true,

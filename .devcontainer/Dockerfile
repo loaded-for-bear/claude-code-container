@@ -11,6 +11,8 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     FLUTTER_HOME=/opt/flutter \
     CHROME_EXECUTABLE=/usr/bin/chromium
+# CHROME_EXECUTABLE: INSTALL_FLUTTER=true 時のみ Chromium がインストールされる。
+# false（デフォルト）時は参照しないこと。
 
 # タイムゾーン設定
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone

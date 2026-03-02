@@ -1,0 +1,19 @@
+# デバッグ専用 Compose override
+#
+# VS Code デバッガー（vscode-lldb / Attach to Process）を使う場合のみ
+# このファイルを追加して起動する。
+#
+# 起動方法:
+#   docker compose -f docker-compose.yml -f docker-compose.debug.yml up -d
+#
+# 通常起動に戻す:
+#   docker compose down
+#   docker compose up -d
+#
+# 注意: SYS_PTRACE はプロセスアタッチを可能にするため、
+#       デバッグが不要な場合は通常の docker-compose.yml のみで起動すること。
+
+services:
+  claude-code:
+    cap_add:
+      - SYS_PTRACE   # vscode-lldb デバッガー（プロセスアタッチ）に必要
