@@ -118,12 +118,12 @@ claude-code-container/
 │   └── allowlist.txt       # 動的 allowlist（スクレイピング対象ドメイン等）
 ├── workspace/              # マウントされる作業ディレクトリ
 ├── .gitignore
-├── docker-compose.yml      # Docker Compose 設定
-├── docker-compose.isolated.yml  # ネットワーク完全隔離モード
+├── docker-compose.yml          # Docker Compose 設定
+├── docker-compose.debug.yml    # デバッグモード（SYS_PTRACE 付与）
+├── docker-compose.isolated.yml # ネットワーク完全隔離モード
 ├── LICENSE
 ├── README.md
-├── REBUILD.md              # 再ビルド手順
-└── SECURITY_TASKS.md       # セキュリティ対応状況
+└── REBUILD.md                  # 再ビルド手順
 ```
 
 ## Docker 管理コマンド
