@@ -86,7 +86,8 @@ RUN pip install --no-cache-dir \
 RUN pip install --no-cache-dir \
     numpy \
     pandas \
-    matplotlib
+    matplotlib \
+    jupyterlab
 
 # Node.js (LTS版) のインストール
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
